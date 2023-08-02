@@ -1,3 +1,4 @@
+import datetime
 import re
 from pprint import pprint
 from time import sleep
@@ -8,6 +9,7 @@ from goszakup import const
 from goszakup import helper
 import pdb
 
+from goszakup.items import LotItem
 
 
 class MainGoszakupSpider(scrapy.Spider):
@@ -49,6 +51,30 @@ class MainGoszakupSpider(scrapy.Spider):
         response_post_html = html.fromstring(response.body)
 
         for tender in helper.fetch_tenders(response_post_html):
+            url = const.TENDER_LINK + tender["tender_id"]
             yield tender
+            yield scrapy.Request(
+                url,
+                callback=self._process_tender_page,
+                cb_kwargs=dict(main_id=tender["id"]),
+                cookies={"zakupki_locale": "ru"},
+            )
 
+    def _process_tender_page(self, response, main_id):
+        response_html = html.fromstring(response.body)
+        tender_type = helper.determine_tender_type(response_html)
 
+        row_expansion_key = ""
+
+        if tender_type == "products":
+            form = const.PRODUCT_LOTS_FORM
+        else:
+            form = const.SERVICE_LOTS_FORM
+
+        form[const.VIEWSTATE_KEY] = helper.get_viewstate(response_html)
+
+        for i in range(helper.count_lots(response_html)):
+            form[row_expansion_key] = str(i)
+
+            for lot_item in helper.fetch_lots(response_html, i, tender_type, main_id):
+                yield lot_item

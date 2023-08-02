@@ -17,30 +17,56 @@ class GoszakupPipeline:
     def __init__(self, db_settings):
         self.db_settings = db_settings
 
+    def drop_tables(self):
+        self.cursor.execute("""DROP TABLE IF EXISTS goskakup_new_main;""")
+        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_tender_lots;""")
+        self.conn.commit()
+
     def create_tables(self):
         self.cursor.execute(
-            """CREATE TABLE IF NOT EXISTS goszakup.public.goskakup_new_main (
-                                    _link                              serial primary key,
-                                    id                                 text,
-                                    tag                                text,
-                                    date                               timestamp,
-                                    ocid                               text,
-                                    initiationType                     text,
-                                    tender_id                          text,
-                                    tender_date                        timestamp,
-                                    tender_procurementSubMethodDetails text,
-                                    tender_mainProcurementCategory     text,
-                                    tender_title                       text,
-                                    tender_status                      text,
-                                    tender_procurementMethodDetails    text,
-                                    tender_tenderNumber                text,
-                                    tender_procurementMethod           text,
-                                    tender_datePublished               timestamp,
-                                    tender_tenderPeriod_startDate      timestamp,
-                                    tender_tenderPeriod_endDate        timestamp,
-                                    tender_enquiryPeriod_startDate     timestamp,
-                                    tender_enquiryPeriod_endDate       timestamp);
-                                    """
+            """
+                create table if not exists goszakup.public.goskakup_new_main (
+                    _link                              serial,
+                    id                                 varchar(100),
+                    tag                                varchar(50),
+                    date                               timestamp,
+                    ocid                               varchar(50),
+                    initiationType                     varchar(50),
+                    tender_id                          varchar(50),
+                    tender_date                        timestamp,
+                    tender_procurementSubMethodDetails varchar(50),
+                    tender_mainProcurementCategory     varchar(50),
+                    tender_title                       text,
+                    tender_status                      varchar(50),
+                    tender_procurementMethodDetails    varchar(50),
+                    tender_tenderNumber                varchar(255),
+                    tender_procurementMethod           varchar(255),
+                    tender_datePublished               timestamp,
+                    tender_tenderPeriod_startDate      timestamp,
+                    tender_tenderPeriod_endDate        timestamp,
+                    tender_enquiryPeriod_startDate     timestamp,
+                    tender_enquiryPeriod_endDate       timestamp,
+                    primary key (_link, id));
+                """
+        )
+
+        # TODO: Update primary keys in tender_lots
+        self.cursor.execute(
+            """
+            create table if not exists goszakup.public.goszakup_new_tender_lots (
+                _link               varchar(255),
+                _link_main          integer,
+                id                  varchar(255),
+                title               text,
+                deliveryDateDetails varchar(100),
+                status              varchar(50),
+                lotNumber           varchar(20),
+                deliveryTerms       varchar(10),
+                deliveryAddress     text,
+                value_amount        integer,
+                value_currency      varchar(10),
+                primary key (_link));
+            """
         )
         self.conn.commit()
 
@@ -53,6 +79,7 @@ class GoszakupPipeline:
         self.conn = psycopg2.connect(**self.db_settings)
         self.cursor = self.conn.cursor()
 
+        self.drop_tables()
         self.create_tables()
 
     def close_spider(self, spider):
@@ -63,7 +90,7 @@ class GoszakupPipeline:
         if isinstance(item, TenderItem):
             self.insert_tender(item)
         elif isinstance(item, LotItem):
-            pass
+            self.insert_lot(item)
         self.conn.commit()
         return item
 
@@ -98,6 +125,47 @@ class GoszakupPipeline:
             item["tender_enquiryPeriod_startDate"],
             item["tender_enquiryPeriod_endDate"],
         )
-        # self.conn.rollback()
-        self.cursor.execute(sql, data)
-        self.conn.commit()
+        try:
+            self.cursor.execute(sql, data)
+            self.conn.commit()
+        except Exception as e:
+            self.conn.rollback()
+            print("Error occurred in main:", e)
+
+    def insert_lot(self, item):
+        main_link_query = f"""
+            select _link
+            from goskakup_new_main
+            where id='{item['main_id']}';
+        """
+        self.cursor.execute(main_link_query)
+        link_main = self.cursor.fetchone()[0]
+        link = f"{link_main}.tender.lots.{item['lot_index']}"
+
+        insert_query = """
+            INSERT INTO goszakup_new_tender_lots (_link, _link_main, id, title, deliveryDateDetails, status, lotNumber, 
+                                                  deliveryTerms, deliveryAddress, value_amount, value_currency)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+
+        data = (
+            link,
+            link_main,
+            item["id"],
+            item["title"],
+            item["deliveryDateDetails"],
+            item["status"],
+            item["lotNumber"],
+            item["deliveryTerms"],
+            item["deliveryAddress"],
+            item["value_amount"],
+            item["value_currency"],
+        )
+
+        try:
+            self.cursor.execute(insert_query, data)
+            self.conn.commit()
+        except Exception as e:
+            self.conn.rollback()
+            print(item)
+            print("Error occurred in lots:", e)

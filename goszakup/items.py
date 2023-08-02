@@ -38,6 +38,9 @@ class TenderItem(scrapy.Item):
 
 
 class LotItem(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    lot_index = scrapy.Field()
+
     _link = scrapy.Field()  # 1.tender.lots.0
     _link_main = scrapy.Field()  # 1
     id = scrapy.Field()  # 18152463

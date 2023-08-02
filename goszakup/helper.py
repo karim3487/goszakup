@@ -4,7 +4,7 @@ import unicodedata
 import re
 from goszakup import const as const
 
-from goszakup.items import TenderItem
+from goszakup.items import TenderItem, LotItem
 
 
 def clear_field(s):
@@ -118,7 +118,7 @@ def fetch_tenders(response):
     for row in rows:
         cols = row.xpath(".//td")
         tender_item = TenderItem()
-        tender_id = clear_field(clear_field(cols[0].xpath(".//text()")[-1]))
+        tender_id = clear_field(clear_field(cols[0].xpath(".//text()")[-1]))[6:]
         date = datetime.datetime.now()
         tender_date = clear_field(cols[7].xpath(".//text()")[-1])
         tender_date = to_iso_datetime(tender_date)
@@ -150,6 +150,35 @@ def fetch_tenders(response):
         tender_item["tender_enquiryPeriod_startDate"] = "1000-01-01"
         tender_item["tender_enquiryPeriod_endDate"] = "1000-01-01"
         yield tender_item
+
+
+def fetch_lots(response, lot_index, tender_type, tender_id):
+    lot_item = LotItem()
+
+    lot_item["main_id"] = tender_id
+    lot_item["lot_index"] = lot_index
+
+    lot_item["id"] = "-1"  # TODO: Update id
+    lot_item["title"] = clear_field(lot_gen_info(response, lot_index + 1, 2))
+    if tender_type == "products":
+        lot_item["deliveryDateDetails"] = clear_field(
+            lot_gen_info(response, lot_index + 1, 7)
+        )
+        lot_item["deliveryTerms"] = clear_field(
+            lot_gen_info(response, lot_index + 1, 6)
+        )
+    else:
+        lot_item["deliveryDateDetails"] = clear_field(
+            lot_gen_info(response, lot_index + 1, 5)
+        )
+        lot_item["deliveryTerms"] = ""  # TODO: Update deliveryTerms
+    lot_item["status"] = "active"  # TODO: Update status
+    lot_item["lotNumber"] = clear_field(lot_gen_info(response, lot_index + 1, 1))
+    lot_item["deliveryAddress"] = clear_field(lot_gen_info(response, lot_index + 1, 4))
+    lot_item["value_amount"] = to_int(lot_gen_info(response, lot_index + 1, 3))
+    lot_item["value_currency"] = "KGS"
+
+    yield lot_item
 
 
 def to_iso_datetime(input_datetime):
