@@ -52,3 +52,23 @@ class LotItem(scrapy.Item):
     deliveryAddress = scrapy.Field()
     value_amount = scrapy.Field()  # 10000
     value_currency = scrapy.Field()  # KGS
+
+
+class ItemItem(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    item_index = scrapy.Field()
+    lot_index = scrapy.Field()
+
+    _link = scrapy.Field()
+    _link_main = scrapy.Field()
+    id = scrapy.Field()
+    relatedLot = scrapy.Field()
+    quantity = scrapy.Field()
+    unit_id = scrapy.Field()
+    unit_name = scrapy.Field()
+    unit_value_empty = scrapy.Field()
+    unit_value_amount = scrapy.Field()
+    unit_value_currency = scrapy.Field()
+    classification_id = scrapy.Field()
+    classification_scheme = scrapy.Field()
+    classification_description = scrapy.Field()

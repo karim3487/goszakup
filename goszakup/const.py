@@ -71,7 +71,7 @@ PRODUCT_LOTS_FORM = {
     "javax.faces.source": "j_idt78:lotsTable",
     "javax.faces.partial.execute": "j_idt78:lotsTable",
     "javax.faces.partial.render": "j_idt78:lotsTable",
-    "j_idt78:lotsTable": " j_idt78:lotsTable",
+    "j_idt78:lotsTable": "j_idt78:lotsTable",
     "j_idt78:lotsTable_rowExpansion": "true",
     "j_idt78:lotsTable_expandedRowIndex": "0",
     "j_idt78:lotsTable_encodeFeature": "true",
@@ -85,10 +85,10 @@ PRODUCT_LOTS_FORM = {
 
 SERVICE_LOTS_FORM = {
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source: j_idt78": "lotsTable2",
+    "javax.faces.source": "j_idt78:lotsTable2",
     "javax.faces.partial.execute": "j_idt78:lotsTable2",
     "javax.faces.partial.render": "j_idt78:lotsTable2",
-    "j_idt78:lotsTable2: j_idt78": "lotsTable2",
+    "j_idt78:lotsTable2": "j_idt78:lotsTable2",
     "j_idt78:lotsTable2_rowExpansion": "true",
     "j_idt78:lotsTable2_expandedRowIndex": "0",
     "j_idt78:lotsTable2_encodeFeature": "true",
@@ -148,6 +148,5 @@ PARTIES_FORM_DETAIL = {
 }
 
 PARTY_NAME = "/html/body/div[3]/div/form/div/table/tbody/tr[1]/td[2]//text()"
-
 
 INPUT_DATE_FORMAT = "%d.%m.%Y %H:%M"

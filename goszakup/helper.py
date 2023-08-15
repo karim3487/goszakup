@@ -1,5 +1,6 @@
 import datetime
 import os
+import pdb
 import unicodedata
 import re
 from goszakup import const as const
@@ -158,7 +159,6 @@ def fetch_lots(response, lot_index, tender_type, tender_id):
     lot_item["main_id"] = tender_id
     lot_item["lot_index"] = lot_index
 
-    lot_item["id"] = "-1"  # TODO: Update id
     lot_item["title"] = clear_field(lot_gen_info(response, lot_index + 1, 2))
     if tender_type == "products":
         lot_item["deliveryDateDetails"] = clear_field(

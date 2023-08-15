@@ -7,9 +7,9 @@ import scrapy
 from lxml import html
 from goszakup import const
 from goszakup import helper
-import pdb
+import ipdb
 
-from goszakup.items import LotItem
+from goszakup.items import LotItem, ItemItem
 
 
 class MainGoszakupSpider(scrapy.Spider):
@@ -64,17 +64,73 @@ class MainGoszakupSpider(scrapy.Spider):
         response_html = html.fromstring(response.body)
         tender_type = helper.determine_tender_type(response_html)
 
-        row_expansion_key = ""
-
         if tender_type == "products":
             form = const.PRODUCT_LOTS_FORM
+            row_expansion_key = "j_idt78:lotsTable_expandedRowIndex"
         else:
             form = const.SERVICE_LOTS_FORM
+            row_expansion_key = "j_idt78:lotsTable2_expandedRowIndex"
 
         form[const.VIEWSTATE_KEY] = helper.get_viewstate(response_html)
 
         for i in range(helper.count_lots(response_html)):
-            form[row_expansion_key] = str(i)
-
             for lot_item in helper.fetch_lots(response_html, i, tender_type, main_id):
                 yield lot_item
+
+            # TODO: fix scrapy tender_items
+            # form[row_expansion_key] = str(i)
+            # print("u:", response.url)
+            # yield scrapy.FormRequest(
+            #     const.VIEW_URL + f"?cid=6",
+            #     formdata=form,
+            #     callback=self._process_lot_page,
+            #     cb_kwargs={"lot_index": i, "main_id": main_id},
+            #     cookies={"zakupki_locale": "ru"},
+            # )
+
+    def _process_lot_page(self, response, lot_index, main_id):
+        lot_page_html = html.fromstring(response.body)
+        product_names_and_codes = lot_page_html.xpath(
+            "//table[@class='display-table private-room-table no-borders f-right']/tbody/tr/td[1]/text()"
+        )
+
+        product_names = []
+        product_codes = []
+
+        for item in product_names_and_codes:
+            code, name = item.split(" : ")
+            product_names.append(name)
+            product_codes.append(code)
+
+        unit_names = lot_page_html.xpath(
+            "//table[@class='display-table private-room-table no-borders f-right']/tbody/tr/td[2]/text()"
+        )
+        quantities = lot_page_html.xpath(
+            "//table[@class='display-table private-room-table no-borders f-right']/tbody/tr/td[3]/text()"
+        )
+        assert (
+            len(product_names)
+            == len(product_codes)
+            == len(unit_names)
+            == len(quantities)
+        )
+
+        for i in range(len(product_names)):
+            item = ItemItem()
+            item["main_id"] = main_id
+
+            item["lot_index"] = lot_index
+            item["item_index"] = i
+            item["quantity"] = helper.clear_field(quantities[i])
+            item["unit_id"] = 1
+            item["unit_name"] = helper.clear_field(unit_names[i])
+            item["unit_value_empty"] = False
+            item["unit_value_amount"] = helper.to_int(
+                helper.lot_gen_info(response, lot_index + 1, 3)
+            )
+            item["unit_value_currency"] = "KGS"
+            item["classification_id"] = helper.clear_field(product_codes[i])
+            item["classification_scheme"] = "OKGZ"
+            item["classification_description"] = helper.clear_field(product_names[i])
+
+            yield item
