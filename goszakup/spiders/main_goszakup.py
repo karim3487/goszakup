@@ -1,4 +1,5 @@
 import datetime
+import pdb
 import re
 from pprint import pprint
 from time import sleep
@@ -77,18 +78,23 @@ class MainGoszakupSpider(scrapy.Spider):
             for lot_item in helper.fetch_lots(response_html, i, tender_type, main_id):
                 yield lot_item
 
-            # TODO: fix scrapy tender_items
-            # form[row_expansion_key] = str(i)
-            # print("u:", response.url)
-            # yield scrapy.FormRequest(
-            #     const.VIEW_URL + f"?cid=6",
-            #     formdata=form,
-            #     callback=self._process_lot_page,
-            #     cb_kwargs={"lot_index": i, "main_id": main_id},
-            #     cookies={"zakupki_locale": "ru"},
-            # )
+            form[row_expansion_key] = str(i)
+            cid = response.xpath('//form[@id="j_idt28"]/@action').extract_first()
+            cid = cid.split("=")[-1]
+            print("u:", response.url)
+            yield scrapy.FormRequest(
+                const.VIEW_URL + f"?cid={cid}",
+                formdata=form,
+                callback=self._process_lot_page,
+                cb_kwargs={
+                    "lot_index": i,
+                    "main_id": main_id,
+                    "response_html": response_html,
+                },
+                cookies={"zakupki_locale": "ru"},
+            )
 
-    def _process_lot_page(self, response, lot_index, main_id):
+    def _process_lot_page(self, response, lot_index, main_id, response_html):
         lot_page_html = html.fromstring(response.body)
         product_names_and_codes = lot_page_html.xpath(
             "//table[@class='display-table private-room-table no-borders f-right']/tbody/tr/td[1]/text()"
@@ -126,7 +132,7 @@ class MainGoszakupSpider(scrapy.Spider):
             item["unit_name"] = helper.clear_field(unit_names[i])
             item["unit_value_empty"] = False
             item["unit_value_amount"] = helper.to_int(
-                helper.lot_gen_info(response, lot_index + 1, 3)
+                helper.lot_gen_info(response_html, lot_index + 1, 3)
             )
             item["unit_value_currency"] = "KGS"
             item["classification_id"] = helper.clear_field(product_codes[i])

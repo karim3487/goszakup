@@ -112,7 +112,7 @@ class GoszakupPipeline:
         elif isinstance(item, LotItem):
             self.insert_lot(item)
         elif isinstance(item, ItemItem):
-            # self.insert_item(item)
+            self.insert_item(item)
             pass
         self.conn.commit()
         return item
@@ -201,7 +201,7 @@ class GoszakupPipeline:
             """
             self.cursor.execute(main_link_query)
             link_main = self.cursor.fetchone()[0]
-            link = f"{link_main}.tender.items.{item['item_index'] + 1}"
+            link = f"{link_main}.tender.items.{item['lot_index'] + 1}"
 
             lot_item_query = f"select id from goszakup_new_tender_lots where _link='{link_main}.tender.lots.{item['lot_index'] + 1}'"
             self.cursor.execute(lot_item_query)
