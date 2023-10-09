@@ -1,12 +1,9 @@
-import os
 import pdb
-from datetime import datetime
 from pprint import pprint
 from time import sleep
 
-from lxml import html
 
-from goszakup import const as const, helper
+from goszakup import const as const
 
 import scrapy
 

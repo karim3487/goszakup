@@ -1,9 +1,9 @@
 import datetime
 import os
-import pdb
 import unicodedata
 import re
-from goszakup import const as const
+
+from goszakup import const as const, items
 
 from goszakup.items import TenderItem, LotItem
 
@@ -78,11 +78,11 @@ def rehash_response_dict(dict, context):
     return dict
 
 
-def to_int(plan_sum):
+def to_int(plan_sum: str):
     result = 0
     if plan_sum is not None and len(plan_sum) > 0:
         try:
-            result = re.findall(r"([\d,]*)", str(plan_sum))
+            result = re.findall(r"([\d,]*)", plan_sum)
             string = "".join(result)
             result = int(float(string.replace(",", ".")))
         except ValueError as ve:
@@ -185,3 +185,42 @@ def to_iso_datetime(input_datetime):
     return datetime.datetime.strptime(
         input_datetime, const.INPUT_DATE_FORMAT
     ).isoformat()
+
+
+def process_proposal_page(response_html, main_id):
+    row_elements = response_html.xpath("//tbody[@id='submissions_data']/tr")
+
+    for i, row_element in enumerate(row_elements):
+        cell_with_table = row_element.xpath(".//td[3]")[0]
+        inner_table = cell_with_table.xpath(".//table")[0]
+        inner_table_rows = inner_table.xpath(".//tr")
+
+        for j, inner_table_row in enumerate(inner_table_rows):
+            # Extract unit value amount from the proposal row
+            row_info = inner_table_row.xpath("normalize-space()")
+
+            unit_value_amount_text = row_info.split(" ")[-1]
+            if "xxxx" in unit_value_amount_text:
+                unit_value_amount = 0
+            else:
+                unit_value_amount = to_int(unit_value_amount_text)
+
+            # Create and yield BidDetailProposal item
+            proposal_item = items.BidDetailProposal(
+                main_id=main_id,
+                bid_id=i + 1,
+                proposal_id=j + 1,
+                lot_number=row_info.split(" ")[0],
+                unit_value_amount=unit_value_amount,
+                unit_value_currency="KGS",
+            )
+            yield proposal_item
+
+        # Create and yield BidDetailItem
+        bid_detail_item = items.BidDetailItem(
+            main_id=main_id,
+            bid_id=i + 1,
+            status="valid",
+            date=datetime.datetime.now(),
+        )
+        yield bid_detail_item

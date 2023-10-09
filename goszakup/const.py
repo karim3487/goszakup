@@ -66,38 +66,50 @@ RESULTS_FORM = {
     "j_idt104:j_idt105:table:0:evaluation_findings": "j_idt104:j_idt105:table:0:evaluation_findings",
 }
 
+J_IDT1_LOTS = 79
+J_IDT2_LOTS = 81
+
 PRODUCT_LOTS_FORM = {
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "j_idt78:lotsTable",
-    "javax.faces.partial.execute": "j_idt78:lotsTable",
-    "javax.faces.partial.render": "j_idt78:lotsTable",
-    "j_idt78:lotsTable": "j_idt78:lotsTable",
-    "j_idt78:lotsTable_rowExpansion": "true",
-    "j_idt78:lotsTable_expandedRowIndex": "0",
-    "j_idt78:lotsTable_encodeFeature": "true",
-    "j_idt78:lotsTable_skipChildren": "true",
-    "j_idt76": "j_idt76",
-    "j_idt78:tender-doc-explanation-table_rppDD": "10",
-    "j_idt78:tender-doc-explanation-table_selection": "",
-    "j_idt78_activeIndex": "0",
+    "javax.faces.source": f"j_idt{J_IDT2_LOTS}:lotsTable",
+    "javax.faces.partial.execute": f"j_idt{J_IDT2_LOTS}:lotsTable",
+    "javax.faces.partial.render": f"j_idt{J_IDT2_LOTS}:lotsTable",
+    f"j_idt{J_IDT2_LOTS}:lotsTable": f"j_idt{J_IDT2_LOTS}:lotsTable",
+    f"j_idt{J_IDT2_LOTS}:lotsTable_rowExpansion": "true",
+    f"j_idt{J_IDT2_LOTS}:lotsTable_expandedRowIndex": "0",
+    f"j_idt{J_IDT2_LOTS}:lotsTable_encodeFeature": "true",
+    f"j_idt{J_IDT2_LOTS}:lotsTable_skipChildren": "true",
+    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
     "javax.faces.ViewState": "",
 }
 
 SERVICE_LOTS_FORM = {
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "j_idt78:lotsTable2",
-    "javax.faces.partial.execute": "j_idt78:lotsTable2",
-    "javax.faces.partial.render": "j_idt78:lotsTable2",
-    "j_idt78:lotsTable2": "j_idt78:lotsTable2",
-    "j_idt78:lotsTable2_rowExpansion": "true",
-    "j_idt78:lotsTable2_expandedRowIndex": "0",
-    "j_idt78:lotsTable2_encodeFeature": "true",
-    "j_idt78:lotsTable2_skipChildren": "true",
-    "j_idt76": "j_idt76",
-    "j_idt78:tender-doc-explanation-table_rppDD": "10",
-    "j_idt78:tender-doc-explanation-table_selection": "",
-    "j_idt78_activeIndex": "0",
+    "javax.faces.source": f"j_idt{J_IDT2_LOTS}:lotsTable2",
+    "javax.faces.partial.execute": f"j_idt{J_IDT2_LOTS}:lotsTable2",
+    "javax.faces.partial.render": f"j_idt{J_IDT2_LOTS}:lotsTable2",
+    f"j_idt{J_IDT2_LOTS}:lotsTable2": f"j_idt{J_IDT2_LOTS}:lotsTable2",
+    f"j_idt{J_IDT2_LOTS}:lotsTable2_rowExpansion": "true",
+    f"j_idt{J_IDT2_LOTS}:lotsTable2_expandedRowIndex": "0",
+    f"j_idt{J_IDT2_LOTS}:lotsTable2_encodeFeature": "true",
+    f"j_idt{J_IDT2_LOTS}:lotsTable2_skipChildren": "true",
+    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
     "javax.faces.ViewState": "",
+}
+
+BIDS_FORM = {
+    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
+    "javax.faces.ViewState": "",
+    f"j_idt{J_IDT2_LOTS}:contest": f"j_idt{J_IDT2_LOTS}:contest",
 }
 
 PARTICIPANTS_FORM = {

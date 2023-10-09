@@ -72,3 +72,53 @@ class ItemItem(scrapy.Item):
     classification_id = scrapy.Field()
     classification_scheme = scrapy.Field()
     classification_description = scrapy.Field()
+
+
+class BidDetailItem(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    bid_id = scrapy.Field()
+
+    _link = scrapy.Field()
+    _link_main = scrapy.Field()
+    id = scrapy.Field()
+    date = scrapy.Field()
+    status = scrapy.Field()
+
+
+class BidDetailProposal(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    bid_id = scrapy.Field()
+    proposal_id = scrapy.Field()
+    lot_number = scrapy.Field()
+
+    _link = scrapy.Field()
+    _link_bids_details = scrapy.Field()
+    _link_main = scrapy.Field()
+    id = scrapy.Field()
+    relatedItem = scrapy.Field()
+    relatedLot = scrapy.Field()
+    unit_value_amount = scrapy.Field()
+    unit_value_currency = scrapy.Field()
+
+
+class BidDetailTenderers(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    bid_id = scrapy.Field()
+
+    _link = scrapy.Field()
+    _link_bids_details = scrapy.Field()
+    _link_main = scrapy.Field()
+    id = scrapy.Field()
+
+
+class BidDetailRelatedLots(scrapy.Item):
+    main_id = scrapy.Field()  # main id for select main and extract link
+    bid_id = scrapy.Field()
+
+    _link = scrapy.Field()
+    _link_bids_details = scrapy.Field()
+    _link_main = scrapy.Field()
+    id = scrapy.Field()
+    value_amount = scrapy.Field()
+    value_currency = scrapy.Field()
+    value_initialAmount = scrapy.Field()

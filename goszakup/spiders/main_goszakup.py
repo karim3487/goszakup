@@ -1,42 +1,36 @@
-import datetime
-import pdb
 import re
-from pprint import pprint
 from time import sleep
 
 import scrapy
 from lxml import html
+from pprint import pprint
+
 from goszakup import const
 from goszakup import helper
-import ipdb
-
-from goszakup.items import LotItem, ItemItem
+from goszakup import items
 
 
 class MainGoszakupSpider(scrapy.Spider):
     name = "main_goszakup"
-    # allowed_domains = ["zakupki.gov.kg"]
     start_urls = ["http://zakupki.gov.kg/popp/view/order/list.xhtml"]
 
     def parse(self, response):
-        offset = 0
+        offset = 2000
 
-        # extract j_ids for "LINKS_FORM"
+        # Extract j_ids for "LINKS_FORM"
         j_ids = response.css('div[id^="j_idt"][class^="ui-tooltip"]').attrib["id"]
         numbers = re.findall(r"\d+", j_ids)
         j_id1, j_id2 = numbers[0], numbers[1]
 
-        # update j_ids in const.py
+        # Update j_ids in const.py
         helper.update_variable("const.py", "J_ID1", j_id1)
         helper.update_variable("const.py", "J_ID2", j_id2)
 
-        viewstate = response.xpath(
-            "//input[@name='javax.faces.ViewState']/@value"
-        ).get()
+        viewstate = helper.get_viewstate(html.fromstring(response.body))
         form = const.LINKS_FORM
         form["javax.faces.ViewState"] = viewstate
 
-        while offset < 20:
+        while offset < 2050:
             form[const.LINKS_OFFSET_KEY] = str(offset)
             pprint(form)
             yield scrapy.FormRequest(
@@ -57,7 +51,7 @@ class MainGoszakupSpider(scrapy.Spider):
             yield scrapy.Request(
                 url,
                 callback=self._process_tender_page,
-                cb_kwargs=dict(main_id=tender["id"]),
+                cb_kwargs={"main_id": tender["id"]},
                 cookies={"zakupki_locale": "ru"},
             )
 
@@ -65,26 +59,41 @@ class MainGoszakupSpider(scrapy.Spider):
         response_html = html.fromstring(response.body)
         tender_type = helper.determine_tender_type(response_html)
 
-        if tender_type == "products":
-            form = const.PRODUCT_LOTS_FORM
-            row_expansion_key = "j_idt78:lotsTable_expandedRowIndex"
-        else:
-            form = const.SERVICE_LOTS_FORM
-            row_expansion_key = "j_idt78:lotsTable2_expandedRowIndex"
+        # Extract j_idts for "SERVICE_LOTS_FORM" and "PRODUCT_LOTS_FORM"
+        j_idt = response.css('div[id^="j_idt"][class^="ui-tabs"]').attrib["id"]
+        j_idt2 = int(re.findall(r"\d+", j_idt)[0])
+        j_idt1 = j_idt2 - 2
 
-        form[const.VIEWSTATE_KEY] = helper.get_viewstate(response_html)
+        # Update j_ids in const.py
+        helper.update_variable("const.py", "J_IDT1_LOTS", j_idt1)
+        helper.update_variable("const.py", "J_IDT2_LOTS", j_idt2)
+
+        detail_lot_form = (
+            const.PRODUCT_LOTS_FORM
+            if tender_type == "products"
+            else const.SERVICE_LOTS_FORM
+        )
+        row_expansion_key = (
+            f"j_idt{const.J_IDT2_LOTS}:lotsTable_expandedRowIndex"
+            if tender_type == "products"
+            else f"j_idt{const.J_IDT2_LOTS}:lotsTable2_expandedRowIndex"
+        )
+
+        bids_form = const.BIDS_FORM
+
+        viewstate = helper.get_viewstate(response_html)
+        detail_lot_form[const.VIEWSTATE_KEY] = bids_form[
+            const.VIEWSTATE_KEY
+        ] = viewstate
+
+        cid = response.css('form[id^="j_idt"]')[0].attrib["action"].split("=")[-1]
 
         for i in range(helper.count_lots(response_html)):
-            for lot_item in helper.fetch_lots(response_html, i, tender_type, main_id):
-                yield lot_item
-
-            form[row_expansion_key] = str(i)
-            cid = response.xpath('//form[@id="j_idt28"]/@action').extract_first()
-            cid = cid.split("=")[-1]
-            print("u:", response.url)
+            yield from helper.fetch_lots(response_html, i, tender_type, main_id)
+            detail_lot_form[row_expansion_key] = str(i)
             yield scrapy.FormRequest(
                 const.VIEW_URL + f"?cid={cid}",
-                formdata=form,
+                formdata=detail_lot_form,
                 callback=self._process_lot_page,
                 cb_kwargs={
                     "lot_index": i,
@@ -93,6 +102,29 @@ class MainGoszakupSpider(scrapy.Spider):
                 },
                 cookies={"zakupki_locale": "ru"},
             )
+
+        if "Протокол" in response.text:
+            yield scrapy.FormRequest(
+                const.VIEW_URL + f"?cid={cid}",
+                formdata=bids_form,
+                callback=self._process_bids_page,
+                cb_kwargs={"main_id": main_id},
+                cookies={"zakupki_locale": "ru"},
+            )
+
+    def _process_bids_page(self, response, main_id):
+        bids_page_html = html.fromstring(response.body)
+        row_elements = bids_page_html.xpath("//tbody[@id='submissions_data']/tr")
+        number_of_rows = len(row_elements)
+
+        if (
+            number_of_rows == 1
+            and row_elements[0].xpath("normalize-space(.)")
+            == "Не найдено ни одной записи."
+        ):
+            yield None
+        else:
+            yield from helper.process_proposal_page(bids_page_html, main_id)
 
     def _process_lot_page(self, response, lot_index, main_id, response_html):
         lot_page_html = html.fromstring(response.body)
@@ -114,29 +146,23 @@ class MainGoszakupSpider(scrapy.Spider):
         quantities = lot_page_html.xpath(
             "//table[@class='display-table private-room-table no-borders f-right']/tbody/tr/td[3]/text()"
         )
-        assert (
-            len(product_names)
-            == len(product_codes)
-            == len(unit_names)
-            == len(quantities)
-        )
 
-        for i in range(len(product_names)):
-            item = ItemItem()
-            item["main_id"] = main_id
-
-            item["lot_index"] = lot_index
-            item["item_index"] = i
-            item["quantity"] = helper.clear_field(quantities[i])
-            item["unit_id"] = 1
-            item["unit_name"] = helper.clear_field(unit_names[i])
-            item["unit_value_empty"] = False
-            item["unit_value_amount"] = helper.to_int(
-                helper.lot_gen_info(response_html, lot_index + 1, 3)
+        for i, product_name in enumerate(product_names):
+            item = items.ItemItem(
+                main_id=main_id,
+                lot_index=lot_index,
+                item_index=i,
+                quantity=helper.to_int(helper.clear_field(quantities[i])),
+                unit_id=1,
+                unit_name=helper.clear_field(unit_names[i]),
+                unit_value_empty=False,
+                unit_value_amount=helper.to_int(
+                    helper.lot_gen_info(response_html, lot_index + 1, 3)
+                ),
+                unit_value_currency="KGS",
+                classification_id=helper.clear_field(product_codes[i]),
+                classification_scheme="OKGZ",
+                classification_description=helper.clear_field(product_name),
             )
-            item["unit_value_currency"] = "KGS"
-            item["classification_id"] = helper.clear_field(product_codes[i])
-            item["classification_scheme"] = "OKGZ"
-            item["classification_description"] = helper.clear_field(product_names[i])
 
             yield item
