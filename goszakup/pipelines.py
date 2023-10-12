@@ -21,9 +21,8 @@ class GoszakupPipeline:
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_tender_lots;""")
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_tender_items;""")
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details;""")
-        self.cursor.execute(
-            """DROP TABLE IF EXISTS goszakup_new_bids_detailsproposal;"""
-        )
+        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_detailsproposal;""")
+        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details_tenderers;""")
         self.conn.commit()
 
     def create_tables(self):
@@ -116,6 +115,16 @@ class GoszakupPipeline:
             primary key (_link, id));
             """
         )
+        self.cursor.execute(
+            """
+            create table goszakup.public.goszakup_new_bids_details_tenderers(
+            _link              varchar(255),
+            _link_bids_details varchar(255),
+            _link_main         integer,
+            id                 varchar(100),
+            primary key (_link, id));
+            """
+        )
         self.conn.commit()
 
     @classmethod
@@ -146,6 +155,8 @@ class GoszakupPipeline:
                 self.insert_bid_detail(item)
             case items.BidDetailProposal():
                 self.insert_bid_detail_proposal(item)
+            case items.BidDetailTenderers():
+                self.insert_bid_detail_tenderers(item)
         return item
 
     def insert_tender(self, item):
