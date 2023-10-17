@@ -3,7 +3,6 @@ from time import sleep
 
 import scrapy
 from lxml import html
-from pprint import pprint
 
 from goszakup import const
 from goszakup import helper
@@ -15,8 +14,6 @@ class MainGoszakupSpider(scrapy.Spider):
     start_urls = ["http://zakupki.gov.kg/popp/view/order/list.xhtml"]
 
     def parse(self, response):
-        offset = 2000
-
         # Extract j_ids for "LINKS_FORM"
         j_ids = response.css('div[id^="j_idt"][class^="ui-tooltip"]').attrib["id"]
         numbers = re.findall(r"\d+", j_ids)
@@ -30,16 +27,14 @@ class MainGoszakupSpider(scrapy.Spider):
         form = const.LINKS_FORM
         form["javax.faces.ViewState"] = viewstate
 
-        while offset < 2050:
+        for offset in range(2000, 2010, const.ROWS_NUMBER):
             form[const.LINKS_OFFSET_KEY] = str(offset)
-            pprint(form)
             yield scrapy.FormRequest(
                 response.url,
                 formdata=form,
                 callback=self._fetch_links,
                 cookies={"zakupki_locale": "ru"},
             )
-            offset += const.ROWS_NUMBER
             sleep(2)
 
     def _fetch_links(self, response):
@@ -60,13 +55,14 @@ class MainGoszakupSpider(scrapy.Spider):
         tender_type = helper.determine_tender_type(response_html)
 
         # Extract j_idts for "SERVICE_LOTS_FORM" and "PRODUCT_LOTS_FORM"
-        j_idt = response.css('div[id^="j_idt"][class^="ui-tabs"]').attrib["id"]
-        j_idt2 = int(re.findall(r"\d+", j_idt)[0])
-        j_idt1 = j_idt2 - 2
+        j_idt1 = response.css('input[name^="j_idt"][value^="j_idt"]')[-1]
+        j_idt1 = int(re.findall(r"\d+", j_idt1.attrib["value"])[0])
+        j_idt2 = response.css('div[id^="j_idt"][class^="ui-tabs"]')
+        j_idt2 = int(re.findall(r"\d+", j_idt2.attrib["id"])[0])
 
         # Update j_ids in const.py
-        helper.update_variable("const.py", "J_IDT1_LOTS", j_idt1)
-        helper.update_variable("const.py", "J_IDT2_LOTS", j_idt2)
+        helper.update_variable("const.py", "J_IDT1_BIDS", j_idt1)
+        helper.update_variable("const.py", "J_IDT2_BIDS", j_idt2)
 
         detail_lot_form = (
             const.PRODUCT_LOTS_FORM
@@ -74,9 +70,9 @@ class MainGoszakupSpider(scrapy.Spider):
             else const.SERVICE_LOTS_FORM
         )
         row_expansion_key = (
-            f"j_idt{const.J_IDT2_LOTS}:lotsTable_expandedRowIndex"
+            f"j_idt{const.J_IDT2_BIDS}:lotsTable_expandedRowIndex"
             if tender_type == "products"
-            else f"j_idt{const.J_IDT2_LOTS}:lotsTable2_expandedRowIndex"
+            else f"j_idt{const.J_IDT2_BIDS}:lotsTable2_expandedRowIndex"
         )
 
         bids_form = const.BIDS_FORM
@@ -86,13 +82,15 @@ class MainGoszakupSpider(scrapy.Spider):
             const.VIEWSTATE_KEY
         ] = viewstate
 
-        cid = response.css('form[id^="j_idt"]')[0].attrib["action"].split("=")[-1]
+        self.cid = int(
+            response.css('form[id^="j_idt"]')[0].attrib["action"].split("=")[-1]
+        )
 
         for i in range(helper.count_lots(response_html)):
             yield from helper.fetch_lots(response_html, i, tender_type, main_id)
             detail_lot_form[row_expansion_key] = str(i)
             yield scrapy.FormRequest(
-                const.VIEW_URL + f"?cid={cid}",
+                const.VIEW_URL + f"?cid={self.cid}",
                 formdata=detail_lot_form,
                 callback=self._process_lot_page,
                 cb_kwargs={
@@ -105,7 +103,7 @@ class MainGoszakupSpider(scrapy.Spider):
 
         if "Протокол" in response.text:
             yield scrapy.FormRequest(
-                const.VIEW_URL + f"?cid={cid}",
+                const.VIEW_URL + f"?cid={self.cid}",
                 formdata=bids_form,
                 callback=self._process_bids_page,
                 cb_kwargs={"main_id": main_id},
@@ -124,7 +122,16 @@ class MainGoszakupSpider(scrapy.Spider):
         ):
             yield None
         else:
-            yield from helper.process_proposal_page(bids_page_html, main_id)
+            yield from helper.process_proposal_page(
+                response, main_id, self._process_tenderers_page
+            )
+
+    def _process_tenderers_page(self, response, main_id, bid_id):
+        inn = response.css(".contentC::text")[0].get()
+        bid_detail_tenderers = items.BidDetailTenderers(
+            main_id=main_id, bid_id=bid_id, id=f"KG-INN-{inn}"
+        )
+        yield bid_detail_tenderers
 
     def _process_lot_page(self, response, lot_index, main_id, response_html):
         lot_page_html = html.fromstring(response.body)
