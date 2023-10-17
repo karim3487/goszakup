@@ -117,7 +117,7 @@ class GoszakupPipeline:
         )
         self.cursor.execute(
             """
-            create table goszakup.public.goszakup_new_bids_details_tenderers(
+            create table if not exists goszakup.public.goszakup_new_bids_details_tenderers(
             _link              varchar(255),
             _link_bids_details varchar(255),
             _link_main         integer,
@@ -312,6 +312,26 @@ class GoszakupPipeline:
                 item["unit_value_amount"],
                 item["unit_value_currency"],
             )
+
+            self.cursor.execute(insert_query, data)
+            self.conn.commit()
+        except Exception as e:
+            self.conn.rollback()
+            print(item)
+            print("Error occurred in bids_details_proposal:", e)
+
+    def insert_bid_detail_tenderers(self, item):
+        link_main = self.get_main_id(item)
+        try:
+            link_bids_details = f"{link_main}.bids.details.{item['bid_id']}"
+            link = link_bids_details + f".tenderers.1"
+
+            insert_query = """
+                        INSERT INTO goszakup_new_bids_details_tenderers (_link, _link_bids_details, _link_main, id)
+                        VALUES (%s, %s, %s, %s);
+                    """
+
+            data = (link, link_bids_details, link_main, item["id"])
 
             self.cursor.execute(insert_query, data)
             self.conn.commit()
