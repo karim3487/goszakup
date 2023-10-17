@@ -21,8 +21,9 @@ class GoszakupPipeline:
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_tender_lots;""")
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_tender_items;""")
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details;""")
-        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_detailsproposal;""")
+        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details_priceProposal;""")
         self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details_tenderers;""")
+        self.cursor.execute("""DROP TABLE IF EXISTS goszakup_new_bids_details_relatedLots;""")
         self.conn.commit()
 
     def create_tables(self):
@@ -103,7 +104,7 @@ class GoszakupPipeline:
         )
         self.cursor.execute(
             """
-            create table if not exists goszakup.public.goszakup_new_bids_detailsProposal(
+            create table if not exists goszakup.public.goszakup_new_bids_details_priceProposal(
             _link               varchar(255),
             _link_bids_details  varchar(255),
             _link_main          integer,
@@ -122,6 +123,19 @@ class GoszakupPipeline:
             _link_bids_details varchar(255),
             _link_main         integer,
             id                 varchar(100),
+            primary key (_link, id));
+            """
+        )
+        self.cursor.execute(
+            """
+            create table if not exists goszakup.public.goszakup_new_bids_details_relatedLots(
+            _link               varchar(255),
+            _link_bids_details  varchar(255),
+            _link_main          integer,
+            id                  serial,
+            value_amount        integer,
+            value_currency      varchar(10),
+            value_initialAmount integer,
             primary key (_link, id));
             """
         )
@@ -157,6 +171,8 @@ class GoszakupPipeline:
                 self.insert_bid_detail_proposal(item)
             case items.BidDetailTenderers():
                 self.insert_bid_detail_tenderers(item)
+            case items.BidDetailRelatedLots():
+                self.insert_bid_detail_related_lots(item)
         return item
 
     def insert_tender(self, item):
@@ -339,6 +355,9 @@ class GoszakupPipeline:
             self.conn.rollback()
             print(item)
             print("Error occurred in bids_details_proposal:", e)
+
+    def insert_bid_detail_related_lots(self, item):
+        pass
 
     def get_main_id(self, item):
         main_link_query = f"""
