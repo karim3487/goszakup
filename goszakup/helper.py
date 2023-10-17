@@ -3,9 +3,18 @@ import os
 import unicodedata
 import re
 
+import scrapy
+from lxml import html
+
 from goszakup import const as const, items
 
 from goszakup.items import TenderItem, LotItem
+
+
+def to_iso_datetime(input_datetime):
+    return datetime.datetime.strptime(
+        input_datetime, const.INPUT_DATE_FORMAT
+    ).isoformat()
 
 
 def clear_field(s):
@@ -114,6 +123,14 @@ def update_variable(filename, variable, new_value):
         file.write(updated_content)
 
 
+def gen_bids_details_tenderers_form(j_idt1, j_idt2, bid_id, viewstate):
+    return {
+        f"submissions:{bid_id}:j_idt{j_idt1}": f"submissions:0:j_idt{j_idt1}",
+        f"submissions:{bid_id}:j_idt{j_idt1}:j_idt{j_idt2}": "Просмотр+предложения",
+        "javax.faces.ViewState": viewstate,
+    }
+
+
 def fetch_tenders(response):
     rows = response.xpath("//tr")
     for row in rows:
@@ -181,19 +198,21 @@ def fetch_lots(response, lot_index, tender_type, tender_id):
     yield lot_item
 
 
-def to_iso_datetime(input_datetime):
-    return datetime.datetime.strptime(
-        input_datetime, const.INPUT_DATE_FORMAT
-    ).isoformat()
-
-
-def process_proposal_page(response_html, main_id):
-    row_elements = response_html.xpath("//tbody[@id='submissions_data']/tr")
+def process_proposal_page(response, main_id, callback):
+    bids_page_html = html.fromstring(response.body)
+    row_elements = bids_page_html.xpath("//tbody[@id='submissions_data']/tr")
 
     for i, row_element in enumerate(row_elements):
         cell_with_table = row_element.xpath(".//td[3]")[0]
         inner_table = cell_with_table.xpath(".//table")[0]
         inner_table_rows = inner_table.xpath(".//tr")
+
+        bid_id = i + 1
+        j_idts = response.css('input[name^="submissions:"][class^="button"]').attrib[
+            "name"
+        ]
+        j_idts = re.findall(r"\d+", j_idts)  # ['0', '224', '225]
+        cid = int(response.css('form[id^="j_idt"]')[0].attrib["action"].split("=")[-1])
 
         for j, inner_table_row in enumerate(inner_table_rows):
             # Extract unit value amount from the proposal row
@@ -208,7 +227,7 @@ def process_proposal_page(response_html, main_id):
             # Create and yield BidDetailProposal item
             proposal_item = items.BidDetailProposal(
                 main_id=main_id,
-                bid_id=i + 1,
+                bid_id=bid_id,
                 proposal_id=j + 1,
                 lot_number=row_info.split(" ")[0],
                 unit_value_amount=unit_value_amount,
@@ -219,8 +238,21 @@ def process_proposal_page(response_html, main_id):
         # Create and yield BidDetailItem
         bid_detail_item = items.BidDetailItem(
             main_id=main_id,
-            bid_id=i + 1,
+            bid_id=bid_id,
             status="valid",
             date=datetime.datetime.now(),
         )
         yield bid_detail_item
+
+        # Extract viewstate and assign it
+        viewstate = get_viewstate(bids_page_html)
+        form = gen_bids_details_tenderers_form(j_idts[1], j_idts[2], i, viewstate)
+        form[const.VIEWSTATE_KEY] = viewstate
+
+        yield scrapy.FormRequest(
+            const.CONTEST_URL + f"?cid={cid}",
+            formdata=form,
+            callback=callback,
+            cb_kwargs={"main_id": main_id, "bid_id": bid_id},
+            cookies={"zakupki_locale": "ru"},
+        )

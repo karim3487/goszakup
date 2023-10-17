@@ -66,50 +66,60 @@ RESULTS_FORM = {
     "j_idt104:j_idt105:table:0:evaluation_findings": "j_idt104:j_idt105:table:0:evaluation_findings",
 }
 
-J_IDT1_LOTS = 79
-J_IDT2_LOTS = 81
+J_IDT1_BIDS = 92
+J_IDT2_BIDS = 94
 
 PRODUCT_LOTS_FORM = {
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": f"j_idt{J_IDT2_LOTS}:lotsTable",
-    "javax.faces.partial.execute": f"j_idt{J_IDT2_LOTS}:lotsTable",
-    "javax.faces.partial.render": f"j_idt{J_IDT2_LOTS}:lotsTable",
-    f"j_idt{J_IDT2_LOTS}:lotsTable": f"j_idt{J_IDT2_LOTS}:lotsTable",
-    f"j_idt{J_IDT2_LOTS}:lotsTable_rowExpansion": "true",
-    f"j_idt{J_IDT2_LOTS}:lotsTable_expandedRowIndex": "0",
-    f"j_idt{J_IDT2_LOTS}:lotsTable_encodeFeature": "true",
-    f"j_idt{J_IDT2_LOTS}:lotsTable_skipChildren": "true",
-    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
-    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
+    "javax.faces.source": f"j_idt{J_IDT2_BIDS}:lotsTable",
+    "javax.faces.partial.execute": f"j_idt{J_IDT2_BIDS}:lotsTable",
+    "javax.faces.partial.render": f"j_idt{J_IDT2_BIDS}:lotsTable",
+    f"j_idt{J_IDT2_BIDS}:lotsTable": f"j_idt{J_IDT2_BIDS}:lotsTable",
+    f"j_idt{J_IDT2_BIDS}:lotsTable_rowExpansion": "true",
+    f"j_idt{J_IDT2_BIDS}:lotsTable_expandedRowIndex": "0",
+    f"j_idt{J_IDT2_BIDS}:lotsTable_encodeFeature": "true",
+    f"j_idt{J_IDT2_BIDS}:lotsTable_skipChildren": "true",
+    f"j_idt{J_IDT1_BIDS}": f"j_idt{J_IDT1_BIDS}",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_BIDS}_activeIndex": "0",
     "javax.faces.ViewState": "",
 }
 
 SERVICE_LOTS_FORM = {
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": f"j_idt{J_IDT2_LOTS}:lotsTable2",
-    "javax.faces.partial.execute": f"j_idt{J_IDT2_LOTS}:lotsTable2",
-    "javax.faces.partial.render": f"j_idt{J_IDT2_LOTS}:lotsTable2",
-    f"j_idt{J_IDT2_LOTS}:lotsTable2": f"j_idt{J_IDT2_LOTS}:lotsTable2",
-    f"j_idt{J_IDT2_LOTS}:lotsTable2_rowExpansion": "true",
-    f"j_idt{J_IDT2_LOTS}:lotsTable2_expandedRowIndex": "0",
-    f"j_idt{J_IDT2_LOTS}:lotsTable2_encodeFeature": "true",
-    f"j_idt{J_IDT2_LOTS}:lotsTable2_skipChildren": "true",
-    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
-    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
+    "javax.faces.source": f"j_idt{J_IDT2_BIDS}:lotsTable2",
+    "javax.faces.partial.execute": f"j_idt{J_IDT2_BIDS}:lotsTable2",
+    "javax.faces.partial.render": f"j_idt{J_IDT2_BIDS}:lotsTable2",
+    f"j_idt{J_IDT2_BIDS}:lotsTable2": f"j_idt{J_IDT2_BIDS}:lotsTable2",
+    f"j_idt{J_IDT2_BIDS}:lotsTable2_rowExpansion": "true",
+    f"j_idt{J_IDT2_BIDS}:lotsTable2_expandedRowIndex": "0",
+    f"j_idt{J_IDT2_BIDS}:lotsTable2_encodeFeature": "true",
+    f"j_idt{J_IDT2_BIDS}:lotsTable2_skipChildren": "true",
+    f"j_idt{J_IDT1_BIDS}": f"j_idt{J_IDT1_BIDS}",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_BIDS}_activeIndex": "0",
     "javax.faces.ViewState": "",
 }
 
 BIDS_FORM = {
-    f"j_idt{J_IDT1_LOTS}": f"j_idt{J_IDT1_LOTS}",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_rppDD": "10",
-    f"j_idt{J_IDT2_LOTS}:tender-doc-explanation-table_selection": "",
-    f"j_idt{J_IDT2_LOTS}_activeIndex": "0",
+    f"j_idt{J_IDT1_BIDS}": f"j_idt{J_IDT1_BIDS}",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_rppDD": "10",
+    f"j_idt{J_IDT2_BIDS}:tender-doc-explanation-table_selection": "",
+    f"j_idt{J_IDT2_BIDS}_activeIndex": "0",
     "javax.faces.ViewState": "",
-    f"j_idt{J_IDT2_LOTS}:contest": f"j_idt{J_IDT2_LOTS}:contest",
+    f"j_idt{J_IDT2_BIDS}:contest": f"j_idt{J_IDT2_BIDS}:contest",
+}
+
+J_IDT1_TENDERERS = 224
+J_IDT2_TENDERERS = 225
+BID_INDEX = 0
+
+BIDS_DETAILS_TENDERERS_FORM = {
+    f"submissions:0:j_idt{J_IDT1_TENDERERS}": f"submissions:0:j_idt{J_IDT1_TENDERERS}",
+    f"submissions:0:j_idt{J_IDT1_TENDERERS}:j_idt{J_IDT2_TENDERERS}": "Просмотр+предложения",
+    "javax.faces.ViewState": "",
 }
 
 PARTICIPANTS_FORM = {
